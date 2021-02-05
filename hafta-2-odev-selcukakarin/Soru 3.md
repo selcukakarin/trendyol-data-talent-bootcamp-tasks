@@ -71,18 +71,18 @@ GROUP BY time
 ORDER BY time ASC
 )
 -- 2. versiyon
-with hyper_count as(
+create or replace table selcuk_akarin.hll_min as
 SELECT * FROM(
 SELECT FORMAT_TIME("%R", EXTRACT(TIME FROM view_ts)) AS time_min, HLL_COUNT.init(deviceid) users
 FROM selcuk_akarin.pageview
 GROUP BY time_min)
-ORDER BY time_min), 
+ORDER BY time_min, 
 
-five_minute_window AS (
+create or replace table selcuk_akarin.hll_five_min AS 
   SELECT
     time_min,
     ARRAY_AGG(users) OVER (ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) five_minute_users
-  FROM hyper_count)
+  FROM selcuk_akarin.hll_min
   
 SELECT
   time_min,(
@@ -91,7 +91,7 @@ SELECT
   FROM
     UNNEST(five_minute_users) users) user_count
 FROM
-  five_minute_window
+  selcuk_akarin.hll_five_min
 ORDER BY
   time_min;
   
